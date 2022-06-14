@@ -14,17 +14,16 @@ import System.Directory
   ( doesDirectoryExist,
     doesFileExist,
     listDirectory,
-    pathIsSymbolicLink,
+    pathIsSymbolicLink, getHomeDirectory,
   )
 import System.FilePath
   ( takeDirectory,
     takeExtension,
     takeFileName,
-    (</>),
+    (</>), takeDrive,
   )
 import System.Posix (getFileStatus)
-import System.Posix.Files
-import Control.Monad
+import System.Posix.Files (deviceID, getFileStatus)
 
 data CheckSpec = forall t.
   CheckSpec
@@ -32,71 +31,49 @@ data CheckSpec = forall t.
     check :: t -> Check
   }
 
-newtype Check = Check (FilePath -> IO (Maybe Integer))
+newtype Check = Check (FilePath -> IO Bool)
 
-checkCheck :: Check -> FilePath -> IO (Maybe Integer)
+checkCheck :: Check -> FilePath -> IO Bool
 checkCheck (Check check) = check
 
 prepareCheck :: FilePath -> CheckSpec -> IO (Maybe Check)
-prepareCheck dir1 CheckSpec {prepare, check} = do
-  r <- prepare dir1
+prepareCheck dir CheckSpec {prepare, check} = do
+  r <- prepare dir
   case r of
     Nothing -> return Nothing
     Just t -> return . Just $ check t
 
 prepareChecks :: FilePath -> [CheckSpec] -> IO [Check]
-prepareChecks dir1 checkspecs = catMaybes <$> mapM (prepareCheck dir1) checkspecs
+prepareChecks dir checkspecs = catMaybes <$> mapM (prepareCheck dir) checkspecs
 
 ignoreNothing :: (a -> a -> a) -> Maybe a -> Maybe a -> Maybe a
 ignoreNothing f (Just a) (Just b) = Just $ f a b
 ignoreNothing _ x Nothing = x
 ignoreNothing _ Nothing y = y
 
-_prepareAndRunChecks :: FilePath -> FilePath -> [CheckSpec] -> IO (Maybe Integer)
-_prepareAndRunChecks dir1 dir2 checkspecs = do
-  checks <- prepareChecks dir1 checkspecs
-  runChecks dir2 checks
-
-_whichChecks :: FilePath -> FilePath -> Map.Map String CheckSpec -> IO (Map.Map String (Maybe Integer))
-_whichChecks dir1 dir2 checkspecs = do
-  checks <- mapM (prepareCheck dir1) checkspecs
-  x <- mapM (mapM (`checkCheck` dir2)) checks
-  return $ fmap join x
-
-runChecks :: FilePath -> [Check] -> IO (Maybe Integer)
+runChecks :: FilePath -> [Check] -> IO Bool
 runChecks dir checks = do
   rs <- mapM (`checkCheck` dir) checks
-  return $ foldl (ignoreNothing min) Nothing rs
+  return $ or rs
 
-mainChecks :: [FilePath] -> Integer -> [Check] -> IO (Maybe Integer)
-mainChecks dirs ix checks
-  | ix >= genericLength dirs = return Nothing
+isRoot :: FilePath -> Bool
+isRoot dir = takeDrive dir == dir
+
+mainChecks :: FilePath -> [Check] -> IO (Maybe FilePath)
+mainChecks dir checks
+  | isRoot dir = return $ Just dir
   | otherwise = do
-    let dir = genericIndex dirs ix
     r <- runChecks dir checks
-    case r of
-      Just o -> return . Just $ o + ix
-      Nothing -> mainChecks dirs (ix + 1) checks
-
-iterateToFix :: Eq a => (a -> a) -> a -> [a]
-iterateToFix f x
-  | x == x' = [x]
-  | otherwise = x : iterateToFix f x'
-  where
-    x' = f x
+    if r
+      then return $ Just dir
+      else mainChecks (takeDirectory dir) checks
 
 mainCheckSpecs :: FilePath -> [CheckSpec] -> IO (Maybe FilePath)
-mainCheckSpecs dir1 checkspecs = do
-  checks <- prepareChecks dir1 checkspecs
-  let dirs = iterateToFix takeDirectory dir1
-  r <- mainChecks dirs 1 checks
-  case r of
-    Just ix
-      | ix < genericLength dirs && ix > 0 ->
-        return . Just $ genericIndex dirs ix
-    _ -> return $ Just "/"
+mainCheckSpecs dir0 checkspecs = do
+  checks <- prepareChecks dir0 checkspecs
+  mainChecks (takeDirectory dir0) checks
 
-simpleCheckSpec :: (FilePath -> IO (Maybe Integer)) -> CheckSpec
+simpleCheckSpec :: (FilePath -> IO Bool) -> CheckSpec
 simpleCheckSpec f =
   CheckSpec
     { prepare = \_ -> return (Just ()),
@@ -107,25 +84,17 @@ anyFileCheckSpec :: (String -> String -> Bool) -> CheckSpec
 anyFileCheckSpec f = simpleCheckSpec \dir -> do
   files <- listDirectory dir
   if any (f dir) files
-    then return (Just 0)
-    else return Nothing
+    then return True
+    else return False
 
 dirExistsCheckSpec :: String -> CheckSpec
-dirExistsCheckSpec name = simpleCheckSpec \dir -> do
-  exists <- doesDirectoryExist (dir </> name)
-  if exists
-    then return (Just 0)
-    else return Nothing
+dirExistsCheckSpec name = simpleCheckSpec \dir -> doesDirectoryExist (dir </> name)
 
 fileExistsCheckSpec :: String -> CheckSpec
-fileExistsCheckSpec name = simpleCheckSpec \dir -> do
-  exists <- doesFileExist (dir </> name)
-  if exists
-    then return (Just 0)
-    else return Nothing
+fileExistsCheckSpec name = simpleCheckSpec \dir -> doesFileExist (dir </> name)
 
-checkspecNames :: Map.Map String CheckSpec
-checkspecNames =
+checkSpecsMap :: Map.Map String CheckSpec
+checkSpecsMap =
   Map.fromList (
     map (\name -> (name, fileExistsCheckSpec name))
       [ "CMakeLists.txt",
@@ -157,7 +126,9 @@ checkspecNames =
       ("changelog", changelogFileExists),
       ("license", licenseFileExists),
       (".cabal", cabalFileExists),
-      ("chdisk", changedDeviceId)
+      ("device", changedDeviceId),
+      ("home", isHomeDir),
+      ("symlink", isSymlink)
     ]
   )
 
@@ -184,17 +155,17 @@ changedDeviceId =
         return . Just $ deviceID stat,
       check = \id -> Check $ \dir -> do
         stat <- getFileStatus dir
-        if deviceID stat /= id
-          then return $ Just 0
-          else return Nothing
+        return $ deviceID stat /= id
     }
 
 isSymlink :: CheckSpec
-isSymlink = simpleCheckSpec \dir -> do
-  isSymlink <- pathIsSymbolicLink dir
-  if isSymlink
-    then return (Just 0)
-    else return Nothing
+isSymlink = simpleCheckSpec pathIsSymbolicLink
 
---main = do
---  args <- getArgs
+isHomeDir :: CheckSpec
+isHomeDir =
+  CheckSpec
+    { prepare = \_ -> do
+        home <- getHomeDirectory
+        return . Just $ home,
+      check = \home -> Check $ \dir -> return $ home == dir
+    }
