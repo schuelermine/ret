@@ -25,8 +25,8 @@ import System.FilePath
 import System.Posix (getFileStatus)
 import System.Posix.Files (deviceID, getFileStatus)
 
-data CheckSpec = forall t.
-  CheckSpec
+data Landmark = forall t.
+  Landmark
   { prepare :: FilePath -> IO (Maybe t),
     check :: t -> Check
   }
@@ -36,15 +36,15 @@ newtype Check = Check (FilePath -> IO Bool)
 checkCheck :: Check -> FilePath -> IO Bool
 checkCheck (Check check) = check
 
-prepareCheck :: FilePath -> CheckSpec -> IO (Maybe Check)
-prepareCheck dir CheckSpec {prepare, check} = do
+prepareCheck :: FilePath -> Landmark -> IO (Maybe Check)
+prepareCheck dir Landmark {prepare, check} = do
   r <- prepare dir
   case r of
     Nothing -> return Nothing
     Just t -> return . Just $ check t
 
-prepareChecks :: FilePath -> [CheckSpec] -> IO [Check]
-prepareChecks dir checkspecs = catMaybes <$> mapM (prepareCheck dir) checkspecs
+prepareChecks :: FilePath -> [Landmark] -> IO [Check]
+prepareChecks dir landmarks = catMaybes <$> mapM (prepareCheck dir) landmarks
 
 ignoreNothing :: (a -> a -> a) -> Maybe a -> Maybe a -> Maybe a
 ignoreNothing f (Just a) (Just b) = Just $ f a b
@@ -68,35 +68,35 @@ mainChecks dir checks
       then return $ Just dir
       else mainChecks (takeDirectory dir) checks
 
-mainCheckSpecs :: FilePath -> [CheckSpec] -> IO (Maybe FilePath)
-mainCheckSpecs dir0 checkspecs = do
-  checks <- prepareChecks dir0 checkspecs
+mainLandmarks :: FilePath -> [Landmark] -> IO (Maybe FilePath)
+mainLandmarks dir0 landmarks = do
+  checks <- prepareChecks dir0 landmarks
   mainChecks (takeDirectory dir0) checks
 
-simpleCheckSpec :: (FilePath -> IO Bool) -> CheckSpec
-simpleCheckSpec f =
-  CheckSpec
+simpleLandmark :: (FilePath -> IO Bool) -> Landmark
+simpleLandmark f =
+  Landmark
     { prepare = \_ -> return (Just ()),
       check = \() -> Check f
     }
 
-anyFileCheckSpec :: (String -> String -> Bool) -> CheckSpec
-anyFileCheckSpec f = simpleCheckSpec \dir -> do
+anyFileLandmark :: (String -> String -> Bool) -> Landmark
+anyFileLandmark f = simpleLandmark \dir -> do
   files <- listDirectory dir
   if any (f dir) files
     then return True
     else return False
 
-dirExistsCheckSpec :: String -> CheckSpec
-dirExistsCheckSpec name = simpleCheckSpec \dir -> doesDirectoryExist (dir </> name)
+dirExistsLandmark :: String -> Landmark
+dirExistsLandmark name = simpleLandmark \dir -> doesDirectoryExist (dir </> name)
 
-fileExistsCheckSpec :: String -> CheckSpec
-fileExistsCheckSpec name = simpleCheckSpec \dir -> doesFileExist (dir </> name)
+fileExistsLandmark :: String -> Landmark
+fileExistsLandmark name = simpleLandmark \dir -> doesFileExist (dir </> name)
 
-checkSpecsMap :: Map.Map String CheckSpec
-checkSpecsMap =
+landmarksMap :: Map.Map String Landmark
+landmarksMap =
   Map.fromList (
-    map (\name -> (name, fileExistsCheckSpec name))
+    map (\name -> (name, fileExistsLandmark name))
       [ "CMakeLists.txt",
         "Makefile",
         "meson.build",
@@ -112,7 +112,7 @@ checkSpecsMap =
         "shell.nix",
         "default.nix"
       ]
-    <> map (\name -> (name, dirExistsCheckSpec name))
+    <> map (\name -> (name, dirExistsLandmark name))
       [ ".git",
         ".hg",
         ".svn",
@@ -132,24 +132,24 @@ checkSpecsMap =
     ]
   )
 
-changelogFileExists :: CheckSpec
-changelogFileExists = anyFileCheckSpec \_ file -> ((==) `on` CI.mk) (takeFileName file) "CHANGELOG"
+changelogFileExists :: Landmark
+changelogFileExists = anyFileLandmark \_ file -> ((==) `on` CI.mk) (takeFileName file) "CHANGELOG"
 
-licenseFileExists :: CheckSpec
-licenseFileExists = anyFileCheckSpec \_ file -> ((==) `on` CI.mk) (takeFileName file) "LICENSE"
+licenseFileExists :: Landmark
+licenseFileExists = anyFileLandmark \_ file -> ((==) `on` CI.mk) (takeFileName file) "LICENSE"
 
-cabalFileExists :: CheckSpec
-cabalFileExists = anyFileCheckSpec \_ file -> takeExtension file == ".cabal"
+cabalFileExists :: Landmark
+cabalFileExists = anyFileLandmark \_ file -> takeExtension file == ".cabal"
 
-indexHtmlFileExists :: CheckSpec
+indexHtmlFileExists :: Landmark
 indexHtmlFileExists =
-  anyFileCheckSpec \_ file ->
+  anyFileLandmark \_ file ->
     takeFileName file == "index.html" &&
     takeExtension file `elem` [".html", ".xhtml", ".htm"]
 
-changedDeviceId :: CheckSpec
+changedDeviceId :: Landmark
 changedDeviceId =
-  CheckSpec
+  Landmark
     { prepare = \dir -> do
         stat <- getFileStatus dir
         return . Just $ deviceID stat,
@@ -158,12 +158,12 @@ changedDeviceId =
         return $ deviceID stat /= id
     }
 
-isSymlink :: CheckSpec
-isSymlink = simpleCheckSpec pathIsSymbolicLink
+isSymlink :: Landmark
+isSymlink = simpleLandmark pathIsSymbolicLink
 
-isHomeDir :: CheckSpec
+isHomeDir :: Landmark
 isHomeDir =
-  CheckSpec
+  Landmark
     { prepare = \_ -> do
         home <- getHomeDirectory
         return . Just $ home,

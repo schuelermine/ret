@@ -1,7 +1,7 @@
 cabal-version:      3.0
 name:               ret
 version:            0.1.0.0
--- synopsis:
+synopsis:           A tool that returns to a landmark parent directory
 -- description:
 -- homepage:
 -- bug-reports:
@@ -11,7 +11,7 @@ author:             Anselm Schüler
 maintainer:         mail@anselmschueler.com
 -- copyright:
 category:           Tool
-extra-source-files: CHANGELOG.md
+-- extra-source-files:
 
 executable ret
   main-is:          Ret.hs
