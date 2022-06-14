@@ -17,7 +17,7 @@ executable ret
   main-is:          Ret.hs
   -- other-modules:    
   -- other-extensions:
-  build-depends:    base>=4.15.1.0,
+  build-depends:    base,
                     process, directory, filepath, unix,
                     containers, case-insensitive
   -- hs-source-dirs:
