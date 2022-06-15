@@ -14,7 +14,7 @@ cd $(ret)
 ```
 
 You can specify a set of landmark names as the arguments to `ret` to only use them.
-You can also specify a set of default landmark names in `$XDG_CONFIG_HOME/ret/landmarks.txt`.
+You can also specify a set of default landmark names in `$XDG_CONFIG_HOME/ret/landmarks.txt`, one per line.
 
 Current landmarks are:
 
