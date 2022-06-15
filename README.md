@@ -50,6 +50,8 @@ Current landmarks are:
   - `home`: The directory is your home directory
   - `symlink`: The directory is a symlink
 
+You are invited to contribute more landmark specifications! Or send me an email if you want one added.
+
 ## How to build
 
 You can build it using The Haskell Cabal or Nix.
