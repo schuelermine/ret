@@ -143,7 +143,16 @@ landmarksMap =
         "flake.nix",
         "shell.nix",
         "default.nix",
-        "Makefile.am"
+        "Makefile.am",
+        "pom.xml",
+        ".hgignore",
+        "jsconfig.json",
+        "tslint.json",
+        "package.json",
+        "package-lock.json",
+        "yarn.lock",
+        "cabal.project",
+        "cabal.sandbox.config"
       ]
     <> map (\name -> (name, dirExistsLandmark name))
       [ ".git",
@@ -153,7 +162,10 @@ landmarksMap =
         ".bzr",
         ".darcs",
         ".vscode",
-        ".direnv"
+        ".direnv",
+        "bower_components",
+        "node_modules",
+        "jspm_packages"
       ]
     <> map (\name -> (name, anyFileLandmark \file -> ((==) `on` CI.mk) (takeFileName file) name))
       [ "changelog",

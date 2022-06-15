@@ -34,6 +34,16 @@ Current landmarks are:
   - `shell.nix`
   - `default.nix`
   - `Makefile.am`
+  - `Makefile.am`
+  - `pom.xml`
+  - `.hgignore`
+  - `jsconfig.json`
+  - `tslint.json`
+  - `package.json`
+  - `package-lock.json`
+  - `yarn.lock`
+  - `cabal.project`
+  - `cabal.sanbox.config`
 - Specific directories
   - `.git`
   - `.hg`
@@ -43,6 +53,9 @@ Current landmarks are:
   - `.darcs`
   - `.vscode`
   - `.direnv`
+  - `bower_components`
+  - `node_modules`
+  - `jspm_packages`
 - Case-insensitive base name matches
   - `readme` (For `README.md` and `ReadMe.txt`)
   - `license`
