@@ -44,6 +44,13 @@ Current landmarks are:
   - `yarn.lock`
   - `cabal.project`
   - `cabal.sanbox.config`
+  - `pnpm-lock.yaml`
+  - `.pnpmfile.cjs`
+  - `package-lock.json`
+  - `.npmrc`
+  - `.yarnrc`
+  - `.npmignore`
+  - `flake.lock`
 - Specific directories
   - `.git`
   - `.hg`

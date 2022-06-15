@@ -152,7 +152,14 @@ landmarksMap =
         "package-lock.json",
         "yarn.lock",
         "cabal.project",
-        "cabal.sandbox.config"
+        "cabal.sandbox.config",
+        "pnpm-lock.yaml",
+        ".pnpmfile.cjs",
+        "package-lock.json",
+        ".npmrc",
+        ".yarnrc",
+        ".npmignore",
+        "flake.lock"
       ]
     <> map (\name -> (name, dirExistsLandmark name))
       [ ".git",
