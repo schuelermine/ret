@@ -2,7 +2,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Ret where
+module Main where
 
 import Data.Char (toUpper)
 import Data.Function (on, (&))
