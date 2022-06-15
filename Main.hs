@@ -7,7 +7,6 @@ module Main where
 import Data.Char (toUpper)
 import Data.Function (on, (&))
 import Data.List (genericIndex, genericLength)
-import qualified Data.CaseInsensitive as CI
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes, mapMaybe)
 import System.Directory
@@ -26,6 +25,7 @@ import System.Posix (getFileStatus)
 import System.Posix.Files (deviceID, getFileStatus)
 import System.Directory.Internal.Prelude (exitFailure, getArgs)
 import System.Exit (exitSuccess)
+import qualified Data.CaseInsensitive as CI
 
 data Landmark = forall t.
   Landmark
@@ -33,9 +33,9 @@ data Landmark = forall t.
     check :: t -> Check
   }
 
-newtype Check = Check (FilePath -> IO Bool)
+newtype Check = Check (FilePath -> [String] -> IO Bool)
 
-checkCheck :: Check -> FilePath -> IO Bool
+checkCheck :: Check -> FilePath -> [String] -> IO Bool
 checkCheck (Check check) = check
 
 prepareCheck :: FilePath -> Landmark -> IO (Maybe Check)
@@ -55,7 +55,8 @@ ignoreNothing _ Nothing y = y
 
 runChecks :: FilePath -> [Check] -> IO Bool
 runChecks dir checks = do
-  results <- mapM (`checkCheck` dir) checks
+  ls <- listDirectory dir
+  results <- mapM (\check -> checkCheck check dir ls) checks
   return $ or results
 
 mainChecks :: FilePath -> [Check] -> IO (Maybe FilePath)
@@ -105,7 +106,7 @@ getLandmarkNames = do
 defaultLandmarkNames :: [String]
 defaultLandmarkNames = Map.keys landmarksMap
 
-simpleLandmark :: (FilePath -> IO Bool) -> Landmark
+simpleLandmark :: (FilePath -> [String] -> IO Bool) -> Landmark
 simpleLandmark f =
   Landmark
     { prepare = \_ -> return (Just ()),
@@ -113,23 +114,23 @@ simpleLandmark f =
     }
 
 anyFileLandmark :: (String -> Bool) -> Landmark
-anyFileLandmark f = simpleLandmark \dir -> do
-  files <- listDirectory dir
-  if any f files
+anyFileLandmark f = simpleLandmark \dir ls -> do
+  if any f ls
     then return True
     else return False
 
 dirExistsLandmark :: String -> Landmark
-dirExistsLandmark name = simpleLandmark \dir -> doesDirectoryExist (dir </> name)
+dirExistsLandmark name = simpleLandmark \dir ls -> doesDirectoryExist (dir </> name)
 
 fileExistsLandmark :: String -> Landmark
-fileExistsLandmark name = simpleLandmark \dir -> doesFileExist (dir </> name)
+fileExistsLandmark name = simpleLandmark \dir ls -> doesFileExist (dir </> name)
 
 landmarksMap :: Map.Map String Landmark
 landmarksMap =
   Map.fromList (
-    map (\name -> (name, fileExistsLandmark name))
-      [ "CMakeLists.txt",
+    map (\name -> (name, anyFileLandmark (== name)))
+      [
+        "CMakeLists.txt",
         "Makefile",
         "meson.build",
         "build.xml",
@@ -159,10 +160,8 @@ landmarksMap =
         ".npmrc",
         ".yarnrc",
         ".npmignore",
-        "flake.lock"
-      ]
-    <> map (\name -> (name, dirExistsLandmark name))
-      [ ".git",
+        "flake.lock",
+        ".git",
         ".hg",
         ".svn",
         ".pijul",
@@ -172,15 +171,24 @@ landmarksMap =
         ".direnv",
         "bower_components",
         "node_modules",
-        "jspm_packages"
+        "jspm_packages",
+        "Cargo.toml",
+        ".clang-format",
+        "_clang-format",
+        "compile_commands.json",
+        "pom.xml",
+        "build.gradle",
+        "build.sbt"
       ]
     <> map (\name -> (name, anyFileLandmark \file -> ((==) `on` CI.mk) (takeFileName file) name))
-      [ "changelog",
+      [
+        "changelog",
         "license",
         "readme"
       ]
     <> map (\name -> (name, anyFileLandmark \file -> takeExtension file == name))
-      [ ".cabal",
+      [
+        ".cabal",
         ".sln"
       ]
     <> [
@@ -209,13 +217,13 @@ changedDeviceId =
     { prepare = \dir -> do
         stat <- getFileStatus dir
         return . Just $ deviceID stat,
-      check = \id -> Check $ \dir -> do
+      check = \id -> Check $ \dir ls -> do
         stat <- getFileStatus dir
         return $ deviceID stat /= id
     }
 
 isSymlink :: Landmark
-isSymlink = simpleLandmark pathIsSymbolicLink
+isSymlink = simpleLandmark \dir ls -> pathIsSymbolicLink dir
 
 isHomeDir :: Landmark
 isHomeDir =
@@ -223,5 +231,5 @@ isHomeDir =
     { prepare = \_ -> do
         home <- getHomeDirectory
         return . Just $ home,
-      check = \home -> Check $ \dir -> return $ home == dir
+      check = \home -> Check $ \dir ls -> return $ home == dir
     }
