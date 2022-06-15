@@ -1,7 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 
@@ -26,14 +25,7 @@ import System.Posix (getFileStatus)
 import System.Posix.Files (deviceID, getFileStatus)
 import System.Directory.Internal.Prelude (exitFailure, getArgs)
 import System.Exit (exitSuccess)
-import Text.Regex.TDFA as TDFA
-    ( RegexContext(match),
-      RegexMaker(makeRegexOpts),
-      RegexOptions(defaultCompOpt),
-      CompOption(caseSensitive, multiline, lastStarGreedy),
-      ExecOption(ExecOption, captureGroups) )
-import Data.Bifunctor ( Bifunctor(second) )
-import Text.RawString.QQ (r)
+import qualified Data.CaseInsensitive as CI
 
 data Landmark = forall t.
   Landmark
@@ -136,8 +128,9 @@ fileExistsLandmark name = simpleLandmark \dir ls -> doesFileExist (dir </> name)
 landmarksMap :: Map.Map String Landmark
 landmarksMap =
   Map.fromList (
-    map (\name -> (name, regexLandmark name))
-      [ "CMakeLists.txt",
+    map (\name -> (name, anyFileLandmark (== name)))
+      [
+        "CMakeLists.txt",
         "Makefile",
         "meson.build",
         "build.xml",
@@ -178,35 +171,33 @@ landmarksMap =
         ".direnv",
         "bower_components",
         "node_modules",
-        "jspm_packages"
+        "jspm_packages",
+        "Cargo.toml",
+        ".clang-format",
+        "_clang-format",
+        "compile_commands.json",
+        "pom.xml",
+        "build.gradle",
+        "build.sbt"
       ]
-    <> map (second regexLandmarkCI)
-      [ ("changelog", [r|changelog(\..*)?|]),
-        ("license", [r|license(\..*)?|]),
-        ("readme", [r|readme(\..*)?|])
+    <> map (\name -> (name, anyFileLandmark \file -> ((==) `on` CI.mk) (takeFileName file) name))
+      [
+        "changelog",
+        "license",
+        "readme"
       ]
     <> map (\name -> (name, anyFileLandmark \file -> takeExtension file == name))
-      [ ".cabal",
+      [
+        ".cabal",
         ".sln"
       ]
-    <>
-      [ ("device", changedDeviceId),
-        ("home", isHomeDir),
-        ("symlink", isSymlink),
-        ("index.html", indexHtmlFileExists)
-      ]
+    <> [
+      ("device", changedDeviceId),
+      ("home", isHomeDir),
+      ("symlink", isSymlink),
+      ("index.html", indexHtmlFileExists)
+    ]
   )
-
-regexLandmark :: String -> Landmark
-regexLandmark regex = anyFileLandmark (match (makeRegexOpts defaultCompOpt {
-  multiline = False,
-  lastStarGreedy = True} ExecOption {captureGroups = False} regex))
-
-regexLandmarkCI :: String -> Landmark
-regexLandmarkCI regex = anyFileLandmark (match (makeRegexOpts defaultCompOpt {
-  caseSensitive = False,
-  multiline = False,
-  lastStarGreedy = True} ExecOption {captureGroups = False} regex))
 
 slnFileExists :: Landmark
 slnFileExists = anyFileLandmark \file -> takeExtension file == ".sln"
