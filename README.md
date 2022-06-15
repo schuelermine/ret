@@ -33,6 +33,7 @@ Current landmarks are:
   - `flake.nix`
   - `shell.nix`
   - `default.nix`
+  - `Makefile.am`
 - Specific directories
   - `.git`
   - `.hg`
@@ -42,13 +43,18 @@ Current landmarks are:
   - `.darcs`
   - `.vscode`
   - `.direnv`
+- Case-insensitive base name matches
+  - `readme` (For `README.md` and `ReadMe.txt`)
+  - `license`
+  - `changelog`
+- Extension matches
+  - `.cabal`
+  - `.sln`
 - Other checks
-  - `changelog`: A file with base name “changelog” (case-insensitive) exists
-  - `license`: ditto, named “license”
-  - `.cabal`: A file ending in `.cabal` exists
   - `device`: The directory changed device ID (e.g. after a mountpoint or symlink)
   - `home`: The directory is your home directory
   - `symlink`: The directory is a symlink
+  - `index.html`: Matches `.html`, `.xhtml`, `.htm`
 
 You are invited to contribute more landmark specifications! Or send me an email if you want one added.
 
@@ -56,7 +62,7 @@ You are invited to contribute more landmark specifications! Or send me an email 
 
 You can, of course, manually copy the `ret` binary into a location of your choice.
 
-### Cabal
+### Cabal install
 
 Clone this repository and run
 
@@ -64,7 +70,7 @@ Clone this repository and run
 cabal install
 ```
 
-### NixOS
+### NixOS install
 
 This repository provides a Nixpkgs overlay you can use to get this into your flake-based NixOS or home-manager config.  
 Add `github:schuelermine/ret` to your inputs, add `ret.overlays.default` to your overlays, and add `ret` to your packages.
@@ -73,13 +79,13 @@ Add `github:schuelermine/ret` to your inputs, add `ret.overlays.default` to your
 
 You can build it using The Haskell Cabal or Nix.
 
-### Cabal
+### Cabal build
 
 ```sh
 cabal build
 ```
 
-### Nix
+### Nix build
 
 First, enable the nix-command and flakes experimental features.  
 Then, run

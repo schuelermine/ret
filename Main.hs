@@ -112,10 +112,10 @@ simpleLandmark f =
       check = \() -> Check f
     }
 
-anyFileLandmark :: (String -> String -> Bool) -> Landmark
+anyFileLandmark :: (String -> Bool) -> Landmark
 anyFileLandmark f = simpleLandmark \dir -> do
   files <- listDirectory dir
-  if any (f dir) files
+  if any f files
     then return True
     else return False
 
@@ -142,7 +142,8 @@ landmarksMap =
         ".envrc",
         "flake.nix",
         "shell.nix",
-        "default.nix"
+        "default.nix",
+        "Makefile.am"
       ]
     <> map (\name -> (name, dirExistsLandmark name))
       [ ".git",
@@ -154,28 +155,32 @@ landmarksMap =
         ".vscode",
         ".direnv"
       ]
+    <> map (\name -> (name, anyFileLandmark \file -> ((==) `on` CI.mk) (takeFileName file) name))
+      [ "changelog",
+        "license",
+        "readme"
+      ]
+    <> map (\name -> (name, anyFileLandmark \file -> takeExtension file == name))
+      [ ".cabal",
+        ".sln"
+      ]
     <> [
-      ("changelog", changelogFileExists),
-      ("license", licenseFileExists),
-      (".cabal", cabalFileExists),
       ("device", changedDeviceId),
       ("home", isHomeDir),
-      ("symlink", isSymlink)
+      ("symlink", isSymlink),
+      ("index.html", indexHtmlFileExists)
     ]
   )
 
-changelogFileExists :: Landmark
-changelogFileExists = anyFileLandmark \_ file -> ((==) `on` CI.mk) (takeFileName file) "CHANGELOG"
-
-licenseFileExists :: Landmark
-licenseFileExists = anyFileLandmark \_ file -> ((==) `on` CI.mk) (takeFileName file) "LICENSE"
+slnFileExists :: Landmark
+slnFileExists = anyFileLandmark \file -> takeExtension file == ".sln"
 
 cabalFileExists :: Landmark
-cabalFileExists = anyFileLandmark \_ file -> takeExtension file == ".cabal"
+cabalFileExists = anyFileLandmark \file -> takeExtension file == ".cabal"
 
 indexHtmlFileExists :: Landmark
 indexHtmlFileExists =
-  anyFileLandmark \_ file ->
+  anyFileLandmark \file ->
     takeFileName file == "index.html" &&
     takeExtension file `elem` [".html", ".xhtml", ".htm"]
 
