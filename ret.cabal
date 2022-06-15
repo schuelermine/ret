@@ -19,6 +19,6 @@ executable ret
   -- other-extensions:
   build-depends:    base,
                     process, directory, filepath, unix,
-                    containers, case-insensitive
+                    containers, regex-tdfa, raw-strings-qq
   -- hs-source-dirs:
   default-language: Haskell2010
