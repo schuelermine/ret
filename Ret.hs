@@ -9,21 +9,23 @@ import Data.Function (on, (&))
 import Data.List (genericIndex, genericLength)
 import qualified Data.CaseInsensitive as CI
 import qualified Data.Map.Strict as Map
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, mapMaybe)
 import System.Directory
   ( doesDirectoryExist,
     doesFileExist,
     listDirectory,
-    pathIsSymbolicLink, getHomeDirectory,
+    pathIsSymbolicLink, getHomeDirectory, getCurrentDirectory, getXdgDirectory, XdgDirectory (XdgConfig),
   )
 import System.FilePath
   ( takeDirectory,
     takeExtension,
     takeFileName,
-    (</>), takeDrive,
+    (</>), isDrive,
   )
 import System.Posix (getFileStatus)
 import System.Posix.Files (deviceID, getFileStatus)
+import System.Directory.Internal.Prelude (exitFailure, getArgs)
+import System.Exit (exitSuccess)
 
 data Landmark = forall t.
   Landmark
@@ -38,8 +40,8 @@ checkCheck (Check check) = check
 
 prepareCheck :: FilePath -> Landmark -> IO (Maybe Check)
 prepareCheck dir Landmark {prepare, check} = do
-  r <- prepare dir
-  case r of
+  result <- prepare dir
+  case result of
     Nothing -> return Nothing
     Just t -> return . Just $ check t
 
@@ -53,18 +55,15 @@ ignoreNothing _ Nothing y = y
 
 runChecks :: FilePath -> [Check] -> IO Bool
 runChecks dir checks = do
-  rs <- mapM (`checkCheck` dir) checks
-  return $ or rs
-
-isRoot :: FilePath -> Bool
-isRoot dir = takeDrive dir == dir
+  results <- mapM (`checkCheck` dir) checks
+  return $ or results
 
 mainChecks :: FilePath -> [Check] -> IO (Maybe FilePath)
 mainChecks dir checks
-  | isRoot dir = return $ Just dir
+  | isDrive dir = return Nothing
   | otherwise = do
-    r <- runChecks dir checks
-    if r
+    result <- runChecks dir checks
+    if result
       then return $ Just dir
       else mainChecks (takeDirectory dir) checks
 
@@ -72,6 +71,39 @@ mainLandmarks :: FilePath -> [Landmark] -> IO (Maybe FilePath)
 mainLandmarks dir0 landmarks = do
   checks <- prepareChecks dir0 landmarks
   mainChecks (takeDirectory dir0) checks
+
+select :: Ord k => Map.Map k v -> [k] -> [v]
+select m = mapMaybe (`Map.lookup` m)
+
+mainLandmarkNames :: FilePath -> [String] -> IO (Maybe FilePath)
+mainLandmarkNames dir0 names = mainLandmarks dir0 $ select landmarksMap names
+
+main :: IO ()
+main = do
+  names <- getLandmarkNames
+  dir0 <- getCurrentDirectory
+  result <- mainLandmarkNames dir0 names
+  case result of
+    Nothing -> exitFailure
+    Just dir -> do
+      putStrLn dir
+      exitSuccess
+
+getLandmarkNames :: IO [String]
+getLandmarkNames = do
+  args <- getArgs
+  if null args then do
+    configDir <- getXdgDirectory XdgConfig "ret"
+    let configFile = configDir </> "landmarks.txt"
+    exists <- doesFileExist configFile
+    if exists then do
+      names <- readFile configFile
+      return $ lines names
+    else return defaultLandmarkNames
+  else return args
+
+defaultLandmarkNames :: [String]
+defaultLandmarkNames = Map.keys landmarksMap
 
 simpleLandmark :: (FilePath -> IO Bool) -> Landmark
 simpleLandmark f =
