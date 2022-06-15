@@ -52,6 +52,23 @@ Current landmarks are:
 
 You are invited to contribute more landmark specifications! Or send me an email if you want one added.
 
+## Installing
+
+You can, of course, manually copy the `ret` binary into a location of your choice.
+
+### Cabal
+
+Clone this repository and run
+
+```bash
+cabal install
+```
+
+### NixOS
+
+This repository provides a Nixpkgs overlay you can use to get this into your flake-based NixOS or home-manager config.  
+Add `github:schuelermine/ret` to your inputs, add `ret.overlays.default` to your overlays, and add `ret` to your packages.
+
 ## How to build
 
 You can build it using The Haskell Cabal or Nix.
