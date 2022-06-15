@@ -3,7 +3,7 @@
 }:
 mkDerivation {
   pname = "ret";
-  version = "0.1.2.1";
+  version = "0.1.2.2";
   src = ./.;
   isLibrary = false;
   isExecutable = true;

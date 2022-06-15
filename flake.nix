@@ -4,8 +4,9 @@
       packages.default =
         nixpkgs.legacyPackages.${system}.haskellPackages.callPackage
         ./package.nix { };
+    }) // {
       overlays.default = final: prev: {
-        ret = self.packages.${system}.default;
+        ret = self.packages.${final.system}.default;
       };
-    });
+    };
 }
