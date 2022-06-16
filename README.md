@@ -4,12 +4,14 @@ Ret is a tool that goes up the directory chain and returns the first directory w
 
 A landmark is an important property of the directory, such as the existence of a configuration file, being the user’s home directory, or being on a different drive.
 
+This project is hosted on GitHub: https://github.com/schuelermine/ret/
+
 ## How to use
 
 You can use this to go back to your project root in a jiffy by using your shell’s command substitution syntax,
 e.g.:
 
-```bash
+```sh
 cd $(ret)
 ```
 
@@ -20,13 +22,20 @@ You are invited to contribute more landmark specifications! Or send me an email 
 
 ## Installing
 
+### Manual install
+
 You can, of course, manually copy the `ret` binary into a location of your choice.
+You can download the binary from the GitHub releases or build it yourself.
+
+### Debian install
+
+You can install the Debian package that’s downloadable from the GitHub releases page using `dpkg` or `apt` or another frontend.
 
 ### Cabal install
 
 Clone this repository and run
 
-```bash
+```sh
 cabal install
 ```
 
@@ -52,4 +61,12 @@ Then, run
 
 ```sh
 nix build
+```
+
+### Build Debian package
+
+Make sure that you have Nix installed and enabled the nix-command and flakes experimental features.
+
+```sh
+nix bundle --bundler bundlers#toDEB
 ```
