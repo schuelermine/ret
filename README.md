@@ -31,6 +31,8 @@ You can download the binary from the GitHub releases or build it yourself.
 
 You can install the Debian package that’s downloadable from the GitHub releases page using `dpkg` or `apt` or another frontend.
 
+**Warning:** The Debian package is produced without care and has a wrong version number.
+
 ### Cabal install
 
 Clone this repository and run
