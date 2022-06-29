@@ -17,7 +17,7 @@ executable ret
   main-is:          Main.hs
   -- other-modules:    
   -- other-extensions:
-  build-depends:    base >= 4.15,
+  build-depends:    base >= 4.15 && <= 4.16,
                     unix >= 2.7,
                     filepath >= 1.4,
                     directory >= 1.3,

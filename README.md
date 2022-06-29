@@ -4,15 +4,22 @@ Ret is a tool that goes up the directory chain and returns the first directory w
 
 A landmark is an important property of the directory, such as the existence of a configuration file, being the user’s home directory, or being on a different drive.
 
-This project is hosted on GitHub: https://github.com/schuelermine/ret/
+This project is hosted on [GitHub](https://github.com/schuelermine/ret/).  
+This project is on [Hackage](https://hackage.haskell.org/package/ret/).
 
 ## How to use
 
 You can use this to go back to your project root in a jiffy by using your shell’s command substitution syntax,
 e.g.:
 
-```sh
+```bash
 cd $(ret)
+```
+
+or
+
+```fish
+cd (ret)
 ```
 
 You can specify a set of landmark names as the arguments to `ret` to only use them.
@@ -23,6 +30,26 @@ You are invited to contribute more landmark specifications! Or send me an email 
 ## Installing
 
 Note: All install methods except the NixOS one are untested by the author.
+
+### Shell integration
+
+After installing (see below), you can make using `ret` even more convenient by defining a shell function that does `cd` for you.
+
+e.g.
+
+```bash
+ret() {
+  cd $(command ret "$@")
+}
+```
+
+or
+
+```fish
+function ret
+  cd (command ret $argv)
+end
+```
 
 ### Manual install
 
