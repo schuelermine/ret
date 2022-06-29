@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               ret
-version:            0.1.4.0
+version:            0.1.4.2
 synopsis:           A tool that returns to a landmark parent directory
 -- description:
 -- homepage:
@@ -11,14 +11,17 @@ author:             Anselm Schüler
 maintainer:         mail@anselmschueler.com
 -- copyright:
 category:           Tool
--- extra-source-files:
+extra-source-files: README.md
 
 executable ret
   main-is:          Main.hs
   -- other-modules:    
   -- other-extensions:
-  build-depends:    base,
-                    process, directory, filepath, unix,
-                    containers, case-insensitive
+  build-depends:    base >= 4.15,
+                    unix >= 2.7,
+                    filepath >= 1.4,
+                    directory >= 1.3,
+                    containers >= 0.6,
+                    case-insensitive >= 1.2
   -- hs-source-dirs:
   default-language: Haskell2010

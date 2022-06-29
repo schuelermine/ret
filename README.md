@@ -22,16 +22,26 @@ You are invited to contribute more landmark specifications! Or send me an email 
 
 ## Installing
 
+Note: All install methods except the NixOS one are untested by the author.
+
 ### Manual install
 
 You can, of course, manually copy the `ret` binary into a location of your choice.
 You can download the binary from the GitHub releases or build it yourself.
 
+### Hackage install
+
+This package is published on Hackage. You can install it using cabal-the-tool:
+
+```sh
+cabal install ret
+```
+
 ### Debian install
 
-You can install the Debian package that’s downloadable from the GitHub releases page using `dpkg` or `apt` or another frontend.
-
 **Warning:** The Debian package is produced without care and has a wrong version number.
+
+You can install the Debian package that’s downloadable from the GitHub releases page using `dpkg` or `apt` or another frontend.
 
 ### Cabal install
 
@@ -52,6 +62,8 @@ You can build it using The Haskell Cabal or Nix.
 
 ### Cabal build
 
+Use cabal-the-tool:
+
 ```sh
 cabal build
 ```
@@ -59,13 +71,13 @@ cabal build
 ### Nix build
 
 First, enable the nix-command and flakes experimental features.  
-Then, run
+Then, run:
 
 ```sh
 nix build
 ```
 
-### Build Debian package
+### Build a Debian package
 
 Make sure that you have Nix installed and enabled the nix-command and flakes experimental features.
 
