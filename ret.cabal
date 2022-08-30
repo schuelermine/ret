@@ -1,15 +1,15 @@
 cabal-version:      3.0
 name:               ret
-version:            0.1.5.0
+version:            0.1.5.1
 synopsis:           A tool that returns to a landmark parent directory
--- description:
--- homepage:
--- bug-reports:
+description:        A tool that outputs a parent directory with a landmark
+homepage:           https://github.com/schuelermine/ret
+bug-reports:        https://github.com/schuelermine/ret/issues
 license:            MIT
 license-file:       LICENSE
 author:             Anselm Schüler
 maintainer:         mail@anselmschueler.com
--- copyright:
+copyright:          ⓒ 2022 Anselm Schüler
 category:           Tool
 extra-source-files: README.md
 

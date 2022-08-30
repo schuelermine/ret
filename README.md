@@ -25,13 +25,9 @@ cd (ret)
 You can specify a set of landmark names as the arguments to `ret` to only use them.
 You can also specify a set of default landmark names in `$XDG_CONFIG_HOME/ret/landmarks.txt`, one per line.
 
-You are invited to contribute more landmark specifications! Or send me an email if you want one added.
+You are invited to contribute more landmark specifications! Look in the source code, it’s easy.
 
-## Installing
-
-Note: All install methods except the NixOS one are untested by the author.
-
-### Shell integration
+## Shell integration
 
 After installing (see below), you can make using `ret` even more convenient by defining a shell function that does `cd` for you.
 
@@ -51,63 +47,20 @@ function ret
 end
 ```
 
-### Manual install
+## Installing
 
-You can, of course, manually copy the `ret` binary into a location of your choice.
-You can download the binary from the GitHub releases or build it yourself.
-
-### Hackage install
-
-This package is published on Hackage. You can install it using cabal-the-tool:
+This project is hosted on Hackage. You can install it via:
 
 ```sh
 cabal install ret
 ```
 
-### Debian install
+This project is also redistributed for Nix in Nixpkgs under `haskellPackages.ret`.
 
-**Warning:** The Debian package is produced without care and has a wrong version number.
+## Building
 
-You can install the Debian package that’s downloadable from the GitHub releases page using `dpkg` or `apt` or another frontend.
-
-### Cabal install
-
-Clone this repository and run
-
-```sh
-cabal install
-```
-
-### NixOS install
-
-This repository provides a Nixpkgs overlay you can use to get this into your flake-based NixOS or home-manager config.  
-Add `github:schuelermine/ret` to your inputs, add `ret.overlays.default` to your overlays, and add `ret` to your packages.
-
-## How to build
-
-You can build it using The Haskell Cabal or Nix.
-
-### Cabal build
-
-Use cabal-the-tool:
+Clone the repository and run this in it:
 
 ```sh
 cabal build
-```
-
-### Nix build
-
-First, enable the nix-command and flakes experimental features.  
-Then, run:
-
-```sh
-nix build
-```
-
-### Build a Debian package
-
-Make sure that you have Nix installed and enabled the nix-command and flakes experimental features.
-
-```sh
-nix bundle --bundler bundlers#toDEB
 ```
