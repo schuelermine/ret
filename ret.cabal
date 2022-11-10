@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               ret
-version:            0.1.5.1
+version:            0.1.5.2
 synopsis:           A tool that returns to a landmark parent directory
 description:        A tool that outputs a parent directory with a landmark
 homepage:           https://github.com/schuelermine/ret
@@ -17,7 +17,7 @@ executable ret
   main-is:          Main.hs
   -- other-modules:    
   -- other-extensions:
-  build-depends:    base >= 4.15 && <= 5,
+  build-depends:    base >= 4.15 && < 5,
                     unix >= 2.7,
                     filepath >= 1.4,
                     directory >= 1.3,

@@ -35,7 +35,7 @@ e.g.
 
 ```bash
 ret() {
-  cd $(command ret "$@")
+  cd $(command ret $@)
 }
 ```
 
