@@ -9,7 +9,7 @@ import Data.Char (toUpper)
 import Data.Function (on, (&))
 import Data.List (genericIndex, genericLength)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (catMaybes, mapMaybe)
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import System.Directory
   ( XdgDirectory (XdgConfig),
     doesDirectoryExist,
@@ -20,8 +20,8 @@ import System.Directory
     listDirectory,
     pathIsSymbolicLink,
   )
-import System.Directory.Internal.Prelude (exitFailure, getArgs)
-import System.Exit (exitSuccess)
+import System.Environment (getArgs, lookupEnv)
+import System.Exit (exitFailure, exitSuccess)
 import System.FilePath
   ( isDrive,
     takeBaseName,
@@ -39,10 +39,7 @@ data Landmark = forall t.
     check :: t -> Check
   }
 
-newtype Check = Check (FilePath -> [String] -> IO Bool)
-
-checkCheck :: Check -> FilePath -> [String] -> IO Bool
-checkCheck (Check check) = check
+newtype Check = Check {checkCheck :: FilePath -> [String] -> IO Bool}
 
 prepareCheck :: FilePath -> Landmark -> IO (Maybe Check)
 prepareCheck dir Landmark {prepare, check} = do
@@ -79,6 +76,9 @@ select m = mapMaybe (`Map.lookup` m)
 
 mainLandmarkNames :: FilePath -> [String] -> IO (Maybe FilePath)
 mainLandmarkNames dir0 names = mainLandmarks dir0 $ select landmarksMap names
+
+getDir0 :: IO String
+getDir0 = flip fromMaybe <$> lookupEnv "PWD" <*> getCurrentDirectory
 
 main :: IO ()
 main = do
@@ -132,7 +132,7 @@ anyFileWithBaseNameCI :: String -> Landmark
 anyFileWithBaseNameCI name = anyFile \file -> ((==) `on` CI.mk) (takeBaseName file) name
 
 getNamedLandmarksUsing :: (String -> Landmark) -> [String] -> [(String, Landmark)]
-getNamedLandmarksUsing f names = map (\name -> (name, f name)) $ names
+getNamedLandmarksUsing f = map (\name -> (name, f name))
 
 landmarksMap :: Map.Map String Landmark
 landmarksMap =
