@@ -211,7 +211,7 @@ landmarksMap =
 indexHtmlFileExists :: Landmark
 indexHtmlFileExists =
   anyFile \file ->
-    takeFileName file == "index.html"
+    takeBaseName file == "index"
       && takeExtension file `elem` [".html", ".xhtml", ".htm"]
 
 changedDeviceId :: Landmark
