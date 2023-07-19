@@ -128,6 +128,9 @@ anyFileWithName name = anyFile (== name)
 anyFileWithExtension :: String -> Landmark
 anyFileWithExtension name = anyFile \file -> takeExtension file == name
 
+anyFileWithNameCI :: String -> Landmark
+anyFileWithNameCI name = anyFile (on (==) CI.mk name)
+
 anyFileWithBaseNameCI :: String -> Landmark
 anyFileWithBaseNameCI name = anyFile \file -> ((==) `on` CI.mk) (takeBaseName file) name
 
@@ -173,7 +176,9 @@ landmarksMap =
           "jsconfig.json",
           "jspm_packages",
           "Makefile.am",
+          "makefile.am",
           "Makefile",
+          "makefile",
           "manifest.json",
           "meson.build",
           "MODULE",
@@ -188,7 +193,8 @@ landmarksMap =
           "tsconfig.json",
           "tslint.json",
           "WORKSPACE",
-          "yarn.lock"
+          "yarn.lock",
+          "GNUmakefile"
         ]
         ++ getNamedLandmarksUsing
           anyFileWithBaseNameCI
