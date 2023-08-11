@@ -47,6 +47,9 @@ function ret
 end
 ```
 
+Ret tries to get your current directory from your shell as a symbolic name
+using the `$PWD` environment variable.
+
 ## Installing
 
 This project is hosted on Hackage. You can install it via:

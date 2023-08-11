@@ -83,7 +83,7 @@ getDir0 = flip fromMaybe <$> lookupEnv "PWD" <*> getCurrentDirectory
 main :: IO ()
 main = do
   names <- getLandmarkNames
-  dir0 <- getCurrentDirectory
+  dir0 <- getDir0
   result <- mainLandmarkNames dir0 names
   case result of
     Nothing -> exitFailure
@@ -194,7 +194,8 @@ landmarksMap =
           "tslint.json",
           "WORKSPACE",
           "yarn.lock",
-          "GNUmakefile"
+          "GNUmakefile",
+          "build.cake"
         ]
         ++ getNamedLandmarksUsing
           anyFileWithBaseNameCI
