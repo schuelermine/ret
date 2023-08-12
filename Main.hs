@@ -5,14 +5,11 @@
 module Main where
 
 import qualified Data.CaseInsensitive as CI
-import Data.Char (toUpper)
-import Data.Function (on, (&))
-import Data.List (genericIndex, genericLength)
+import Data.Function (on)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import System.Directory
   ( XdgDirectory (XdgConfig),
-    doesDirectoryExist,
     doesFileExist,
     getCurrentDirectory,
     getHomeDirectory,
@@ -27,11 +24,10 @@ import System.FilePath
     takeBaseName,
     takeDirectory,
     takeExtension,
-    takeFileName,
     (</>),
   )
 import System.Posix (getFileStatus)
-import System.Posix.Files (deviceID, getFileStatus)
+import System.Posix.Files (deviceID)
 
 data Landmark = forall t.
   Landmark
@@ -112,12 +108,12 @@ defaultLandmarkNames = Map.keys landmarksMap
 simpleLandmark :: (FilePath -> [String] -> IO Bool) -> Landmark
 simpleLandmark f =
   Landmark
-    { prepare = \_ -> return (Just ()),
+    { prepare = \_ -> return $ Just (),
       check = \() -> Check f
     }
 
 anyFile :: (String -> Bool) -> Landmark
-anyFile f = simpleLandmark \dir ls -> do
+anyFile f = simpleLandmark \_ ls -> do
   if any f ls
     then return True
     else return False
@@ -128,92 +124,90 @@ anyFileWithName name = anyFile (== name)
 anyFileWithExtension :: String -> Landmark
 anyFileWithExtension name = anyFile \file -> takeExtension file == name
 
-anyFileWithNameCI :: String -> Landmark
-anyFileWithNameCI name = anyFile (on (==) CI.mk name)
-
 anyFileWithBaseNameCI :: String -> Landmark
 anyFileWithBaseNameCI name = anyFile \file -> ((==) `on` CI.mk) (takeBaseName file) name
 
-getNamedLandmarksUsing :: (String -> Landmark) -> [String] -> [(String, Landmark)]
-getNamedLandmarksUsing f = map (\name -> (name, f name))
+getNamedLandmarksUsing :: [(String -> Landmark, [String])] -> [(String, Landmark)]
+getNamedLandmarksUsing = (>>= \(f, names) -> map (\name -> (name, f name)) names)
 
 landmarksMap :: Map.Map String Landmark
 landmarksMap =
-  Map.fromList
-    ( getNamedLandmarksUsing
-        anyFileWithName
-        [ "_clang-format",
-          ".bzr",
-          ".clang-format",
-          ".darcs",
-          ".direnv",
-          ".envrc",
-          ".git",
-          ".gitignore",
-          ".hg",
-          ".hgignore",
-          ".npmignore",
-          ".npmrc",
-          ".pijul",
-          ".pnpmfile.cjs",
-          ".sublime-project",
-          ".sublime-workspace",
-          ".svn",
-          ".vscode",
-          ".yarnrc",
-          "bower_components",
-          "build.gradle",
-          "build.sbt",
-          "build.xml",
-          "cabal.project",
-          "cabal.sandbox.config",
-          "Cargo.toml",
-          "CMakeLists.txt",
-          "compile_commands.json",
-          "default.nix",
-          "flake.lock",
-          "flake.nix",
-          "jsconfig.json",
-          "jspm_packages",
-          "Makefile.am",
-          "makefile.am",
-          "Makefile",
-          "makefile",
-          "manifest.json",
-          "meson.build",
-          "MODULE",
-          "node_modules",
-          "package-lock.json",
-          "package-lock.json",
-          "package.json",
-          "pnpm-lock.yaml",
-          "pom.xml",
-          "shell.nix",
-          "stack.yaml",
-          "tsconfig.json",
-          "tslint.json",
-          "WORKSPACE",
-          "yarn.lock",
-          "GNUmakefile",
-          "build.cake"
+  Map.fromList $
+    [ ("device", changedDeviceId),
+      ("home", isHomeDir),
+      ("index.html", indexHtmlFileExists),
+      ("symlink", isSymlink)
+    ]
+      ++ getNamedLandmarksUsing
+        [ ( anyFileWithName,
+            [ "_clang-format",
+              ".bzr",
+              ".clang-format",
+              ".darcs",
+              ".direnv",
+              ".envrc",
+              ".git",
+              ".gitignore",
+              ".hg",
+              ".hgignore",
+              ".npmignore",
+              ".npmrc",
+              ".pijul",
+              ".pnpmfile.cjs",
+              ".sublime-project",
+              ".sublime-workspace",
+              ".svn",
+              ".vscode",
+              ".yarnrc",
+              "bower_components",
+              "build.gradle",
+              "build.sbt",
+              "build.xml",
+              "cabal.project",
+              "cabal.sandbox.config",
+              "Cargo.toml",
+              "CMakeLists.txt",
+              "compile_commands.json",
+              "default.nix",
+              "flake.lock",
+              "flake.nix",
+              "jsconfig.json",
+              "jspm_packages",
+              "Makefile.am",
+              "makefile.am",
+              "Makefile",
+              "makefile",
+              "manifest.json",
+              "meson.build",
+              "MODULE",
+              "node_modules",
+              "package-lock.json",
+              "package-lock.json",
+              "package.json",
+              "pnpm-lock.yaml",
+              "pom.xml",
+              "shell.nix",
+              "stack.yaml",
+              "tsconfig.json",
+              "tslint.json",
+              "WORKSPACE",
+              "yarn.lock",
+              "GNUmakefile",
+              "build.cake"
+            ]
+          ),
+          ( anyFileWithBaseNameCI,
+            [ "changelog",
+              "license",
+              "readme"
+            ]
+          ),
+          ( anyFileWithExtension,
+            [ ".cabal",
+              ".sln"
+            ]
+          )
         ]
-        ++ getNamedLandmarksUsing
-          anyFileWithBaseNameCI
-          [ "changelog",
-            "license",
-            "readme"
-          ]
-        ++ getNamedLandmarksUsing
-          anyFileWithExtension
-          [ ".cabal",
-            ".sln"
-          ]
-        ++ [ ("device", changedDeviceId),
-             ("home", isHomeDir),
-             ("index.html", indexHtmlFileExists),
-             ("symlink", isSymlink)
-           ]
-    )
 
 indexHtmlFileExists :: Landmark
 indexHtmlFileExists =
@@ -227,13 +221,13 @@ changedDeviceId =
     { prepare = \dir -> do
         stat <- getFileStatus dir
         return . Just $ deviceID stat,
-      check = \id -> Check $ \dir ls -> do
+      check = \deviceId -> Check $ \dir _ -> do
         stat <- getFileStatus dir
-        return $ deviceID stat /= id
+        return $ deviceID stat /= deviceId
     }
 
 isSymlink :: Landmark
-isSymlink = simpleLandmark \dir ls -> pathIsSymbolicLink dir
+isSymlink = simpleLandmark \dir _ -> pathIsSymbolicLink dir
 
 isHomeDir :: Landmark
 isHomeDir =
@@ -241,5 +235,5 @@ isHomeDir =
     { prepare = \_ -> do
         home <- getHomeDirectory
         return . Just $ home,
-      check = \home -> Check $ \dir ls -> return $ home == dir
+      check = \home -> Check $ \dir _ -> return $ home == dir
     }
