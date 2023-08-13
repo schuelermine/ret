@@ -113,10 +113,7 @@ simpleLandmark f =
     }
 
 anyFile :: (String -> Bool) -> Landmark
-anyFile f = simpleLandmark \_ ls -> do
-  if any f ls
-    then return True
-    else return False
+anyFile f = simpleLandmark \_ ls -> return $ any f ls
 
 anyFileWithName :: String -> Landmark
 anyFileWithName name = anyFile (== name)
