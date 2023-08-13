@@ -7,7 +7,7 @@ module Main where
 import qualified Data.CaseInsensitive as CI
 import Data.Function (on)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import System.Directory
   ( XdgDirectory (XdgConfig),
     doesFileExist,
@@ -31,21 +31,17 @@ import System.Posix.Files (deviceID)
 
 data Landmark = forall t.
   Landmark
-  { prepare :: FilePath -> IO (Maybe t),
+  { prepare :: FilePath -> IO t,
     check :: t -> Check
   }
 
 newtype Check = Check {checkCheck :: FilePath -> [String] -> IO Bool}
 
-prepareCheck :: FilePath -> Landmark -> IO (Maybe Check)
-prepareCheck dir Landmark {prepare, check} = do
-  result <- prepare dir
-  case result of
-    Nothing -> return Nothing
-    Just t -> return . Just $ check t
+prepareCheck :: FilePath -> Landmark -> IO Check
+prepareCheck dir Landmark {prepare, check} = check <$> prepare dir
 
 prepareChecks :: FilePath -> [Landmark] -> IO [Check]
-prepareChecks dir landmarks = catMaybes <$> mapM (prepareCheck dir) landmarks
+prepareChecks = mapM . prepareCheck
 
 runChecks :: FilePath -> [Check] -> IO Bool
 runChecks dir checks = do
@@ -108,7 +104,7 @@ defaultLandmarkNames = Map.keys landmarksMap
 simpleLandmark :: (FilePath -> [String] -> IO Bool) -> Landmark
 simpleLandmark f =
   Landmark
-    { prepare = \_ -> return $ Just (),
+    { prepare = mempty,
       check = \() -> Check f
     }
 
@@ -215,9 +211,7 @@ indexHtmlFileExists =
 changedDeviceId :: Landmark
 changedDeviceId =
   Landmark
-    { prepare = \dir -> do
-        stat <- getFileStatus dir
-        return . Just $ deviceID stat,
+    { prepare = fmap deviceID . getFileStatus,
       check = \deviceId -> Check $ \dir _ -> do
         stat <- getFileStatus dir
         return $ deviceID stat /= deviceId
@@ -229,8 +223,6 @@ isSymlink = simpleLandmark \dir _ -> pathIsSymbolicLink dir
 isHomeDir :: Landmark
 isHomeDir =
   Landmark
-    { prepare = \_ -> do
-        home <- getHomeDirectory
-        return . Just $ home,
-      check = \home -> Check $ \dir _ -> return $ home == dir
+    { prepare = const getHomeDirectory,
+      check = \home -> Check \dir _ -> return $ home == dir
     }
