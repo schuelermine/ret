@@ -23,6 +23,8 @@ executable ret
                     containers >= 0.6 && < 0.7,
                     case-insensitive >= 1.2 && < 1.3
   default-language: Haskell2010
+  if !os(windows)
+    cpp-options:    -DUNIX
 
 source-repository this
   type:             git

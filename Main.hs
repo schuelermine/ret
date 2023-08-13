@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -26,8 +27,9 @@ import System.FilePath
     takeExtension,
     (</>),
   )
-import System.Posix (getFileStatus)
-import System.Posix.Files (deviceID)
+#if UNIX
+import System.Posix (getFileStatus, deviceID)
+#endif
 
 data Landmark = forall t.
   Landmark
@@ -126,7 +128,10 @@ getNamedLandmarksUsing = (>>= \(f, names) -> map (\name -> (name, f name)) names
 landmarksMap :: Map.Map String Landmark
 landmarksMap =
   Map.fromList $
-    [ ("device", changedDeviceId),
+    [
+#if UNIX
+      ("device", changedDeviceId),
+#endif
       ("home", isHomeDir),
       ("index.html", indexHtmlFileExists),
       ("symlink", isSymlink)
@@ -208,6 +213,7 @@ indexHtmlFileExists =
     takeBaseName file == "index"
       && takeExtension file `elem` [".html", ".xhtml", ".htm"]
 
+#if UNIX
 changedDeviceId :: Landmark
 changedDeviceId =
   Landmark
@@ -216,6 +222,7 @@ changedDeviceId =
         stat <- getFileStatus dir
         return $ deviceID stat /= deviceId
     }
+#endif
 
 isSymlink :: Landmark
 isSymlink = simpleLandmark \dir _ -> pathIsSymbolicLink dir
