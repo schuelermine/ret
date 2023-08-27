@@ -48,8 +48,7 @@ prepareChecks = mapM . prepareCheck
 runChecks :: FilePath -> [Check] -> IO Bool
 runChecks dir checks = do
   ls <- listDirectory dir
-  results <- mapM (\check -> checkCheck check dir ls) checks
-  return $ or results
+  or <$> mapM (\check -> checkCheck check dir ls) checks
 
 mainChecks :: FilePath -> [Check] -> IO (Maybe FilePath)
 mainChecks dir checks
@@ -94,9 +93,7 @@ getLandmarkNames = do
       let configFile = configDir </> "landmarks.txt"
       exists <- doesFileExist configFile
       if exists
-        then do
-          names <- readFile configFile
-          return $ lines names
+        then lines <$> readFile configFile
         else return defaultLandmarkNames
     else return args
 
@@ -218,7 +215,7 @@ changedDeviceId :: Landmark
 changedDeviceId =
   Landmark
     { prepare = fmap deviceID . getFileStatus,
-      check = \deviceId -> Check $ \dir _ -> do
+      check = \deviceId -> Check \dir _ -> do
         stat <- getFileStatus dir
         return $ deviceID stat /= deviceId
     }
