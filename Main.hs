@@ -71,7 +71,9 @@ mainLandmarkNames :: FilePath -> [String] -> IO (Maybe FilePath)
 mainLandmarkNames dir0 names = mainLandmarks dir0 $ select landmarksMap names
 
 getDir0 :: IO String
-getDir0 = flip fromMaybe <$> lookupEnv "PWD" <*> getCurrentDirectory
+getDir0 = flip fromMaybe
+  <$> lookupEnv "PWD"
+  <*> getCurrentDirectory
 
 main :: IO ()
 main = do
@@ -177,7 +179,7 @@ landmarksMap =
               "MODULE",
               "node_modules",
               "package-lock.json",
-              "package-lock.json",
+              "npm-shrinkwrap.json",
               "package.json",
               "pnpm-lock.yaml",
               "pom.xml",
